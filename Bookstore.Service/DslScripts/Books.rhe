@@ -1,0 +1,107 @@
+﻿Module BookStore
+{
+    Entity Book
+    {
+        ShortString Code { Unique; Required; }
+        ShortString Title { Required; }
+        Integer NumberOfPages;
+        Reference Author BookStore.Person;
+    }
+
+    Entity Person
+    {
+        ShortString Name;
+    }
+
+    Entity Comment
+    {
+        Reference Book { Detail; }
+        LongString Text;
+    }
+
+    Entity ChildrensBook
+    {
+        Extends BookStore.Book;
+
+        Integer AgeFrom;
+        Integer AgeTo;
+        IntegerRange AgeFrom AgeTo;
+    }
+
+    Entity ForeignBook
+    {
+        Extends BookStore.Book;
+
+        ShortString OriginalLanguage;
+        Reference Translator BookStore.Person;
+    }
+
+    Entity Topic
+    {
+        ShortString Name { Unique; Required; }
+    }
+
+    Entity BookTopic
+    {
+        Reference Book { Detail; }
+        Reference Topic { Required; }
+
+        UniqueMultiple 'Book Topic';
+    }
+
+    Entity Employee
+    {
+        ShortString Name;
+        Integer VAT { Unique; }
+    }
+
+    Entity Manager
+    {
+        Extends BookStore.Employee;
+
+        ShortString BonusInfo { Required; }
+    }
+
+    Entity Education
+    {
+        Reference Employee { Detail; }
+        
+        Date DateOfEducation;
+        ShortString Description;
+    }
+
+    Entity Department
+    {
+        Reference Employee { Required; }
+
+        ShortString Code { Unique; Required; }
+        ShortString Description { Required; }
+    }
+}
+
+//  Create a WCF application DSL - start
+//  Module BookStore
+//  {
+//  	Entity Book
+//  	{
+//  		ShortString Code { AutoCode; }
+//  		ShortString Title;
+//  		Integer NumberOfPages;
+//  
+//  		ItemFilter CommonMisspelling 'book => book.Title.Contains("curiousity")';
+//  		InvalidData CommonMisspelling 'It is not allowed to enter misspelled word "curiousity".';
+//  
+//  		Logging;
+//  	}
+//  }
+
+// Flat statements 
+// Module BookStore;
+// Entity BookStore.Book;
+// ShortString BookStore.Book.Code;
+// AutoCode BookStore.Book.Code;
+// ShortString BookStore.Book.Title;
+// Integer BookStore.Book.NumberOfPages;
+// ItemFilter BookStore.Book.CommonMisspelling 'book => book.Title.Contains("curiousity")';
+// InvalidData BookStore.Book.CommonMisspelling 'It is not allowed to enter misspelled word "curiousity".';
+// Logging BookStore.Book;
