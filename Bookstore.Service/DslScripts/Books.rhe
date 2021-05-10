@@ -2,10 +2,11 @@
 {
     Entity Book
     {
+        Reference Author BookStore.Person;
+     
         ShortString Code { Unique; Required; }
         ShortString Title { Required; }
         Integer NumberOfPages;
-        Reference Author BookStore.Person;
     }
 
     Entity Person
@@ -16,6 +17,7 @@
     Entity Comment
     {
         Reference Book { Detail; }
+
         LongString Text;
     }
 
@@ -72,10 +74,16 @@
 
     Entity Department
     {
-        Reference Employee { Required; }
-
         ShortString Code { Unique; Required; }
         ShortString Description { Required; }
+    }
+
+    Entity EmployeeDepartment
+    {
+        Reference Employee { Detail; }
+        Reference Department { Required; }
+
+        UniqueMultiple 'Employee Department';
     }
 }
 
