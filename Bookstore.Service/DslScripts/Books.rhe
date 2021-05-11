@@ -218,8 +218,50 @@
         ShortString Name;
     }
 
+    Hardcoded Genre
+    {
+        LongString ShortDescription;
+        Bool Fiction;
+
+        Entry Fantasy
+        {
+            Value ShortDescription 'Fantasy is a genre of speculative fiction set in a fictional universe';
+            Value Fiction 1;
+        }
+
+        Entry Crime
+        {
+            Value ShortDescription 'Suspense and mystery are key elements that are nearly ubiquitous to the genre';
+            Value Fiction 0;
+        }
+    }
+
+    Action Insert5Books
+        '(parameter, repository, userInfo) =>
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                var newBook = new BookStore.Book { Code = "+++", Title = "New book" };
+                repository.BookStore.Book.Insert(newBook);
+            }
+        }';
+
+    Action InsertNumberOfBooks
+        '(parameter, repository, userInfo) => 
+        {
+            for (int i = 0; i < parameter.NumberOfBooks; i++)
+            {
+                string newTitle = parameter.TitlePrefix + " - " + (i + 1);
+                var newBook = new BookStore.Book { Code = "+++", Title = newTitle };
+                repository.BookStore.Book.Insert(newBook);
+            }
+        }'
+    {
+        Integer NumberOfBooks;
+        ShortString TitlePrefix;
+    }
     // For older Rhetos applications built with DeployPackages, add the required assembly references:
-    ExternalReference 'Newtonsoft.Json.JsonConvert, Newtonsoft.Json';
+    // ExternalReference 'Newtonsoft.Json.JsonConvert, Newtonsoft.Json';
 }
 
 //  Create a WCF application DSL - start
