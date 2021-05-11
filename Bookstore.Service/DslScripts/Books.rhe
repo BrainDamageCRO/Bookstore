@@ -7,11 +7,18 @@
         ShortString Code { Unique; Required; }
         ShortString Title { Required; }
         Integer NumberOfPages;
+
+        Logging { AllProperties; }
     }
 
     Entity Person
     {
         ShortString Name;
+
+        ItemFilter ContainsMaxMark 'item => item.Name.Contains("max")';
+        Lock ContainsMaxMark 'Name contains max mark';
+
+        Deactivatable;
     }
 
     Entity Comment
@@ -74,8 +81,24 @@
 
     Entity Department
     {
-        ShortString Code { Unique; Required; }
         ShortString Description { Required; }
+        ShortString Code 
+        { 
+            AutoCode; 
+            DenyUserEdit; 
+            Unique; 
+            Required; 
+            DefaultValue 'item => "ABC+++"'; 
+        }
+        
+        DateTime TimeOfCreation { CreationTime; }
+
+        DateTime TimeOfModification { ModificationTimeOf BookStore.Department.Description; }
+
+        Logging
+        {
+            Log BookStore.Department.Description;
+        }
     }
 
     Entity EmployeeDepartment
@@ -85,6 +108,118 @@
 
         UniqueMultiple 'Employee Department';
     }
+
+    Browse BookGrid BookStore.Book 
+    {
+        Take Code;
+        Take Title;
+        Take 'Author.Name';
+        Take TranslatorName 'Extension_ForeignBook.Translator.Name';
+        Take NumberOfComments 'Extension_BookInfo.NumberOfComments';
+    }
+
+    SqlQueryable BookInfo
+        "
+            SELECT
+                b.ID,
+                NumberOfComments = COUNT(c.ID)
+            FROM
+                BookStore.Book b
+            LEFT JOIN BookStore.Comment c ON c.BookID = b.ID
+            GROUP BY
+                b.ID
+        "
+    {
+        Extends BookStore.Book;
+        Integer NumberOfComments;
+
+        AutodetectSqlDependencies;
+    }
+
+    SqlQueryable ExternalBookInfo <SQL\BookInfo.sql>
+    {
+        Extends BookStore.Book;
+        Integer NumberOfComments;
+
+        AutodetectSqlDependencies;
+    }
+
+    SqlQueryable BookTopicInfo
+        "
+            SELECT
+                b.ID,
+                NumberOfTopics = COUNT(c.ID)
+            FROM
+                BookStore.Book b
+            LEFT JOIN BookStore.BookTopic c ON c.BookID = b.ID
+            GROUP BY 
+                b.ID
+        "
+    {
+        Extends BookStore.Book;
+        Integer NumberOfTopics;
+
+        AutodetectSqlDependencies;
+    }
+
+    Browse DisplayGrid BookStore.Book
+    {
+        Take Title;
+        Take 'Author.Name';
+        Take NumberOfTopics 'Extension_BookTopicInfo.NumberOfTopics';
+    }
+
+    Computed ExpectedBookRating 'repository =>
+        {
+            var books = repository.BookStore.Book.Query()
+                .Select(b => 
+                    new
+                    {
+                        b.ID,
+                        b.Title,
+                        IsForeign = b.Extension_ForeignBook.ID != null
+                    })
+                .ToList();
+
+            var ratings = new List<ExpectedBookRating>();
+            foreach (var book in books)
+            {
+                decimal rating = 0;
+
+                if (book.Title?.IndexOf("super", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    rating += 100;
+
+                if (book.Title?.IndexOf("great", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    rating += 50;
+
+                if (book.IsForeign)
+                    rating *= 1.2m;
+
+                ratings.Add(new ExpectedBookRating { ID = book.ID, Rating = rating });
+            }
+
+            return ratings.ToArray();
+        }'
+    {
+        Extends BookStore.Book;
+        Decimal Rating;
+    }
+
+    Computed ExternalCustomer 'repository =>
+        {
+            // Gets a list of users from another web API and returns it as a Rhetos data structure.
+            var httpClient = new System.Net.Http.HttpClient();
+            var usersJson = httpClient.GetStringAsync("https://jsonplaceholder.typicode.com/users").Result;
+            var users = Newtonsoft.Json.JsonConvert.DeserializeObject<List<System.Dynamic.ExpandoObject>>(usersJson);
+            var names = users.Select((dynamic user) => user.name);
+            return names.Select(name => new ExternalCustomer { Name = name }).ToArray();
+        }'
+    {
+        ShortString Name;
+    }
+
+    // For older Rhetos applications built with DeployPackages, add the required assembly references:
+    ExternalReference 'Newtonsoft.Json.JsonConvert, Newtonsoft.Json';
 }
 
 //  Create a WCF application DSL - start
